@@ -428,6 +428,43 @@ def remember_strip_tab_order(
     _write(data, environ)
 
 
+# ------------------------------------------------------- account columns
+ACCOUNT_COLUMNS = (
+    ("reconciled", "Reconciled"),
+    ("cleared", "Cleared"),
+    ("today", "Today"),
+    ("future", "Future"),
+)
+ACCOUNT_COLUMN_KEYS = tuple(key for key, _label in ACCOUNT_COLUMNS)
+
+
+def account_columns_choice(
+    environ: dict[str, str] | None = None,
+) -> list[str]:
+    """Visible balance columns; Reconciled is always included."""
+    raw = _read(environ).get("account_columns")
+    if not isinstance(raw, list):
+        return list(ACCOUNT_COLUMN_KEYS)
+    chosen = [key for key in ACCOUNT_COLUMN_KEYS if key in raw]
+    if "reconciled" not in chosen:
+        chosen.insert(0, "reconciled")
+    return [key for key in ACCOUNT_COLUMN_KEYS if key in chosen]
+
+
+def remember_account_columns(
+    columns: list[str], environ: dict[str, str] | None = None
+) -> None:
+    """Persist the visible balance columns (Reconciled cannot be removed)."""
+    chosen = [key for key in ACCOUNT_COLUMN_KEYS if key in columns]
+    if "reconciled" not in chosen:
+        chosen.insert(0, "reconciled")
+    data = _read(environ)
+    data["account_columns"] = [
+        key for key in ACCOUNT_COLUMN_KEYS if key in chosen
+    ]
+    _write(data, environ)
+
+
 def _write(data: dict, environ: dict[str, str] | None = None) -> None:
     config = config_path(environ)
     config.parent.mkdir(parents=True, exist_ok=True)

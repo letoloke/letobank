@@ -7,12 +7,14 @@ import unittest
 from pathlib import Path
 
 from contapy.config import (
+    ACCOUNT_COLUMN_KEYS,
     CHART_STYLES,
     DEFAULT_FRAME_COLORS,
     DEFAULT_LEDGER_STATUS,
     DEFAULT_STRIP_ORDER,
     FRAME_PANEL_KEYS,
     STRIP_TABS,
+    account_columns_choice,
     category_color_overrides,
     chart_style_choice,
     config_path,
@@ -23,6 +25,7 @@ from contapy.config import (
     frame_color_settings,
     last_database,
     ledger_status_choice,
+    remember_account_columns,
     remember_category_colors,
     remember_chart_style,
     remember_database,
@@ -189,6 +192,21 @@ class ConfigTests(unittest.TestCase):
         order = strip_tab_order(self.env)
         self.assertEqual(order[0], "Remind")
         self.assertEqual(set(order), set(STRIP_TABS))
+
+    def test_account_columns_default_to_all_and_keep_reconciled(self) -> None:
+        self.assertEqual(
+            account_columns_choice(self.env), list(ACCOUNT_COLUMN_KEYS)
+        )
+        remember_account_columns(["today"], self.env)
+        self.assertEqual(
+            account_columns_choice(self.env), ["reconciled", "today"]
+        )
+        remember_account_columns(["reconciled", "cleared"], self.env)
+        self.assertEqual(
+            account_columns_choice(self.env), ["reconciled", "cleared"]
+        )
+        remember_account_columns([], self.env)
+        self.assertEqual(account_columns_choice(self.env), ["reconciled"])
 
     def test_corrupt_config_returns_none(self) -> None:
         config = config_path(self.env)

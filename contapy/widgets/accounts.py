@@ -38,6 +38,7 @@ NAME_MIN = 150
 NAME_LEFT = 50
 RIGHT_PAD = 8
 COLUMN_LABELS = ("Reconciled", "Cleared", "Today", "Future")
+COLUMN_KEYS = ("reconciled", "cleared", "today", "future")
 # Keep the most useful balances longest; the order here is drop priority.
 COLUMN_PRIORITY = (2, 1, 0, 3)
 
@@ -53,13 +54,27 @@ def _required_name_width(rows: list["AccountRow"]) -> int:
     )
 
 
-def _visible_value_columns(width: int, rows: list["AccountRow"]) -> list[int]:
-    """Balance columns that fit while leaving the names fully readable."""
+def _visible_value_columns(
+    width: int,
+    rows: list["AccountRow"],
+    selected: list[int] | None = None,
+) -> list[int]:
+    """Selected balance columns that fit; Reconciled is always kept."""
     required = _required_name_width(rows)
-    for count in range(len(COLUMN_LABELS), -1, -1):
-        if width - NAME_LEFT - RIGHT_PAD - count * VALUE_WIDTH >= required:
-            return sorted(COLUMN_PRIORITY[:count])
-    return []
+    chosen = set(selected if selected is not None else range(len(COLUMN_LABELS)))
+    chosen.add(0)
+    order = sorted(chosen)
+    keep_position = {
+        column: index for index, column in enumerate(COLUMN_PRIORITY)
+    }
+    while True:
+        if width - NAME_LEFT - RIGHT_PAD - len(order) * VALUE_WIDTH >= required:
+            return order
+        droppable = [column for column in order if column != 0]
+        if not droppable:
+            return [0]
+        victim = max(droppable, key=lambda column: keep_position.get(column, 99))
+        order.remove(victim)
 
 
 @dataclass(slots=True)
@@ -101,7 +116,12 @@ class AccountsHeader(QWidget):
         scroll = getattr(panel, "scroll", None)
         width = scroll.viewport().width() if scroll is not None else self.width()
         right = width - RIGHT_PAD
-        for index in reversed(_visible_value_columns(width, rows)):
+        selected = (
+            panel.selected_column_indices()
+            if hasattr(panel, "selected_column_indices")
+            else None
+        )
+        for index in reversed(_visible_value_columns(width, rows, selected)):
             left = right - VALUE_WIDTH
             p.drawText(
                 QRectF(left, 0, VALUE_WIDTH, HEADER_H),
@@ -343,7 +363,9 @@ class _AccountCanvas(QWidget):
         width = self.width()
         group_x = max(46, int(width * 0.114))
         warn_x = max(8, int(width * 0.022))
-        active_columns = _visible_value_columns(width, self.panel.rows)
+        active_columns = _visible_value_columns(
+            width, self.panel.rows, self.panel.selected_column_indices()
+        )
         values_left = width - RIGHT_PAD - len(active_columns) * VALUE_WIDTH
         value_font = font(14, 400)
         bold_value_font = font(14, 600)
@@ -478,8 +500,16 @@ class AccountsPanel(QWidget):
     reorderRequested = Signal(int, int)
     addTransactionRequested = Signal(int)
 
-    def __init__(self, parent: QWidget | None = None):
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        columns: list[str] | None = None,
+    ):
         super().__init__(parent)
+        chosen = [key for key in COLUMN_KEYS if key in (columns or COLUMN_KEYS)]
+        if "reconciled" not in chosen:
+            chosen.insert(0, "reconciled")
+        self.columns = tuple(key for key in COLUMN_KEYS if key in chosen)
         self.accounts: list[Account] = []
         self.balances: dict[int, Balance] = {}
         self.rows: list[AccountRow] = []
@@ -512,6 +542,14 @@ class AccountsPanel(QWidget):
         self.footer.downClicked.connect(lambda: self._reorder(1))
 
         self.frame = RoundedFrame(self)
+
+    def selected_column_indices(self) -> list[int]:
+        """Display indexes of the columns the user chose to show."""
+        return [
+            index
+            for index, key in enumerate(COLUMN_KEYS)
+            if key in self.columns
+        ]
 
     def set_frame_color(self, color: str) -> None:
         self.frame.set_color(color)

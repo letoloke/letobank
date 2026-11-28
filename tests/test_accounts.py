@@ -45,12 +45,23 @@ class AccountColumnTests(unittest.TestCase):
         self.assertLess(len(columns), 4)
         self.assert_names_fit(615, account_rows)
 
-    def test_narrow_panel_uses_the_whole_width_for_names(self) -> None:
+    def test_narrow_panel_keeps_only_reconciled(self) -> None:
         account_rows = rows("Checking", "Savings")
         columns = _visible_value_columns(300, account_rows)
-        self.assertEqual(columns, [])
-        self.assert_names_fit(300, account_rows)
+        self.assertEqual(columns, [0])
 
-    def test_today_and_cleared_survive_longest(self) -> None:
+    def test_reconciled_and_today_survive_longest(self) -> None:
         account_rows = rows("Checking", "Savings")
-        self.assertEqual(_visible_value_columns(450, account_rows), [1, 2])
+        self.assertEqual(_visible_value_columns(450, account_rows), [0, 2])
+
+    def test_user_selection_is_respected(self) -> None:
+        account_rows = rows("Checking", "Savings")
+        self.assertEqual(
+            _visible_value_columns(615, account_rows, [0, 1]), [0, 1]
+        )
+        self.assertEqual(
+            _visible_value_columns(615, account_rows, [3]), [0, 3]
+        )
+        self.assertEqual(
+            _visible_value_columns(300, account_rows, [0, 1, 2, 3]), [0]
+        )

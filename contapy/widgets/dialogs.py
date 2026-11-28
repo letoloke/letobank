@@ -65,15 +65,18 @@ from PySide6.QtWidgets import (
 from .. import __version__
 from ..branding import APP_NAME
 from ..config import (
+    ACCOUNT_COLUMNS,
     DEFAULT_FRAME_COLORS,
     FRAME_PANEL_KEYS,
     STRIP_TABS,
+    account_columns_choice,
     category_color_overrides,
     date_format_choice,
     font_family_choice,
     font_weights_choice,
     frame_color_settings,
     ledger_status_choice,
+    remember_account_columns,
     remember_category_colors,
     remember_date_format,
     remember_font_family,
@@ -1998,6 +2001,7 @@ class PreferencesDialog(QDialog):
         self.changed_theme = False
         self.changed_date_format = False
         self.changed_strip_order = False
+        self.changed_account_columns = False
         self.setWindowTitle("Preferences")
         self.setModal(True)
         self.setMinimumWidth(520)
@@ -2118,6 +2122,35 @@ class PreferencesDialog(QDialog):
         strip_help.setStyleSheet(f"color:{C.MUTED_DARK};")
         root.addWidget(strip_help)
 
+        columns_row = QHBoxLayout()
+        columns_row.setSpacing(10)
+        columns_label = QLabel("Columns")
+        columns_label.setFont(font(13, 400))
+        columns_label.setStyleSheet(f"color:{C.TEXT_SOFT};")
+        columns_row.addWidget(columns_label)
+        self.column_checks: dict[str, QCheckBox] = {}
+        chosen_columns = account_columns_choice()
+        for key, label in ACCOUNT_COLUMNS:
+            check = QCheckBox(label)
+            check.setFont(font(12, 400))
+            check.setChecked(key in chosen_columns)
+            if key == "reconciled":
+                check.setEnabled(False)
+                check.setToolTip("Reconciled is always shown")
+            columns_row.addWidget(check)
+            self.column_checks[key] = check
+        columns_row.addStretch(1)
+        root.addLayout(columns_row)
+
+        columns_help = QLabel(
+            "Choose the balance columns shown next to account names. "
+            "Reconciled always stays visible."
+        )
+        columns_help.setWordWrap(True)
+        columns_help.setFont(font(12, 400))
+        columns_help.setStyleSheet(f"color:{C.MUTED_DARK};")
+        root.addWidget(columns_help)
+
         path_label = QLabel(str(store.path))
         path_label.setWordWrap(True)
         path_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -2194,6 +2227,14 @@ class PreferencesDialog(QDialog):
         if order != strip_tab_order():
             remember_strip_tab_order(order)
             self.changed_strip_order = True
+        columns = [
+            key
+            for key, check in self.column_checks.items()
+            if check.isChecked()
+        ]
+        if columns != account_columns_choice():
+            remember_account_columns(columns)
+            self.changed_account_columns = True
         super().accept()
 
     def _open_folder(self) -> None:

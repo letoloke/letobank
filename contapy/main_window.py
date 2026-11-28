@@ -31,6 +31,7 @@ from .airbnb import transform as transform_airbnb
 from .banamex import transform as transform_banamex
 from .booking import transform as transform_booking
 from .config import (
+    account_columns_choice,
     category_color_overrides,
     chart_style_choice,
     date_format_choice,
@@ -343,7 +344,7 @@ class MainWindow(QMainWindow):
             self.bars,
         )
 
-        self.accounts_panel = AccountsPanel()
+        self.accounts_panel = AccountsPanel(columns=account_columns_choice())
         self.accounts_panel.setMinimumHeight(412)
         self.scheduled_panel = ScheduledPanel()
         self.budgets_panel = BudgetsPanel(self.store)
@@ -958,7 +959,13 @@ class MainWindow(QMainWindow):
             self._record_activity("Changed theme", theme_choice())
         if dialog.changed_strip_order:
             self._record_activity("Reordered transaction tabs")
-        if dialog.changed_theme or dialog.changed_strip_order:
+        if dialog.changed_account_columns:
+            self._record_activity("Changed account columns")
+        if (
+            dialog.changed_theme
+            or dialog.changed_strip_order
+            or dialog.changed_account_columns
+        ):
             self._rebuild_for_theme()
 
     def open_visuals(self) -> None:
