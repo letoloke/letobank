@@ -33,8 +33,16 @@ jobs:
         run: |
           $shot = Join-Path $env:RUNNER_TEMP "smoke.png"
           $db = Join-Path $env:RUNNER_TEMP "smoke.db"
-          & .\dist\LetoBank\LetoBank.exe --screenshot $shot --size 1200x700 --db $db
-          if (-not (Test-Path $shot)) { throw "The bundled app did not render a screenshot" }
+          $exe = (Resolve-Path ".\dist\LetoBank\LetoBank.exe").Path
+          $proc = Start-Process -FilePath $exe -ArgumentList @(
+            "--screenshot", $shot, "--size", "1500x820", "--db", $db
+          ) -PassThru -Wait
+          if ($proc.ExitCode -ne 0) {
+            throw "The bundled app exited with $($proc.ExitCode)"
+          }
+          if (-not (Test-Path $shot)) {
+            throw "The bundled app did not render a screenshot"
+          }
 
       - name: Zip bundle
         shell: pwsh
