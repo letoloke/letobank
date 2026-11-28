@@ -44,6 +44,7 @@ from .models import (
     TransactionRow,
 )
 from .omarchy import theme_category_color
+from .paths import data_dir, is_windows
 
 #: Marker for bulk updates that should leave a column untouched.  ``None`` is a
 #: real value for nullable columns such as ``category_id``.
@@ -395,9 +396,12 @@ def default_db_path() -> Path:
     override = os.environ.get("CONTAPY_DB") or os.environ.get("BUDGET_DB")
     if override:
         return Path(override).expanduser()
-    base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
-    path = base / "contapy" / "contapy.db"
-    _migrate_legacy_database(base / "budget" / "budget.db", path)
+    path = data_dir() / "contapy.db"
+    if not is_windows():
+        legacy_base = Path(
+            os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")
+        )
+        _migrate_legacy_database(legacy_base / "budget" / "budget.db", path)
     return path
 
 

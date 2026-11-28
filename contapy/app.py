@@ -46,17 +46,23 @@ class SyncNotifier(QObject):
 
 
 
-def build_app_icon() -> QIcon:
-    size = 128
+def build_app_icon(size: int = 128) -> QIcon:
+    scale = size / 128.0
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.GlobalColor.transparent)
     p = QPainter(pixmap)
     p.setRenderHint(QPainter.RenderHint.Antialiasing, True)
     p.setPen(Qt.PenStyle.NoPen)
     p.setBrush(QColor(C.PANEL))
-    p.drawRoundedRect(QRectF(2, 2, size - 4, size - 4), 26, 26)
+    radius_px = 26 * scale
+    inset = 2 * scale
+    p.drawRoundedRect(
+        QRectF(inset, inset, size - inset * 2, size - inset * 2),
+        radius_px,
+        radius_px,
+    )
     colors = DONUT_COLORS or [C.ACCENT, C.GREEN, C.ORANGE, C.INFO]
-    rect = QRectF(18, 18, size - 36, size - 36)
+    rect = QRectF(18 * scale, 18 * scale, size - 36 * scale, size - 36 * scale)
     angle = 90.0
     span = 360.0 / len(colors)
     for color in colors:
@@ -64,7 +70,9 @@ def build_app_icon() -> QIcon:
         p.drawPie(rect, int(round(angle * 16)), int(round(-span * 16)))
         angle -= span
     p.setBrush(QColor(C.PANEL))
-    p.drawEllipse(QPointF(size / 2, size / 2), size * 0.185, size * 0.185)
+    p.drawEllipse(
+        QPointF(size / 2, size / 2), size * 0.185, size * 0.185
+    )
     p.end()
     return QIcon(pixmap)
 

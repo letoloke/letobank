@@ -20,6 +20,7 @@ from pathlib import Path
 
 from .dates import DATE_FORMATS, DEFAULT_DATE_FORMAT
 from .omarchy import DEFAULT_THEME
+from .paths import config_dir
 
 DEFAULT_LEDGER_STATUS = "any"
 LEDGER_STATUSES = (
@@ -35,9 +36,7 @@ LEDGER_STATUSES = (
 
 
 def config_path(environ: dict[str, str] | None = None) -> Path:
-    env = os.environ if environ is None else environ
-    base = Path(env.get("XDG_CONFIG_HOME") or Path.home() / ".config")
-    return base / "contapy" / "config.json"
+    return config_dir(environ) / "config.json"
 
 
 def _read(environ: dict[str, str] | None = None) -> dict:

@@ -7,8 +7,6 @@ resolved once at startup into the semantic tokens on :class:`C`.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QPalette, QPixmap
 from PySide6.QtWidgets import QApplication
@@ -18,8 +16,9 @@ from .omarchy import (
     load_palette,
     set_theme_choice,
 )
+from .resources import asset_dir
 
-ASSETS = Path(__file__).resolve().parent / "assets"
+ASSETS = asset_dir()
 
 _PALETTE = load_palette()
 
@@ -101,6 +100,32 @@ _FONT_OVERRIDE_WEIGHTS: dict[str, int] = {}
 FONT_ROLES = ("body", "heading", "emphasis")
 TERMINAL_ROLE_WEIGHTS = {"body": 300, "heading": 500, "emphasis": 700}
 
+_BUNDLED_FONTS_LOADED = False
+BUNDLED_FONT_FILES = (
+    "JetBrainsMono-Thin.ttf",
+    "JetBrainsMono-ExtraLight.ttf",
+    "JetBrainsMono-Light.ttf",
+    "JetBrainsMono-Regular.ttf",
+    "JetBrainsMono-Medium.ttf",
+    "JetBrainsMono-SemiBold.ttf",
+    "JetBrainsMono-Bold.ttf",
+    "JetBrainsMono-ExtraBold.ttf",
+)
+
+
+def _load_bundled_fonts() -> None:
+    """Register the bundled JetBrains Mono faces on systems without them."""
+    global _BUNDLED_FONTS_LOADED
+    if _BUNDLED_FONTS_LOADED:
+        return
+    _BUNDLED_FONTS_LOADED = True
+    if "JetBrains Mono" in set(QFontDatabase.families()):
+        return
+    for name in BUNDLED_FONT_FILES:
+        path = ASSETS / name
+        if path.exists():
+            QFontDatabase.addApplicationFont(str(path))
+
 
 def terminal_theme() -> bool:
     """Whether the active palette is the LetoBank CLI terminal theme."""
@@ -117,6 +142,7 @@ def radius(pixels: int = 4) -> str:
 
 def font_family() -> str:
     global _FONT_FAMILY
+    _load_bundled_fonts()
     if _FONT_OVERRIDE_FAMILY:
         return _FONT_OVERRIDE_FAMILY
     if _FONT_FAMILY is None:

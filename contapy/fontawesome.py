@@ -15,7 +15,9 @@ from PySide6.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPixmap
 
 from .theme import C
 
-ASSETS = Path(__file__).resolve().parent / "assets"
+from .resources import asset_dir
+
+ASSETS = asset_dir()
 BUNDLED_FONT = ASSETS / "fa-solid-900.woff2"
 SYSTEM_FONTS = (
     Path("/usr/share/fonts/WOFF2/fa-solid-900.woff2"),

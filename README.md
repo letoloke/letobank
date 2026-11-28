@@ -441,13 +441,36 @@ python3 main.py --db my.db      # use a specific database
 CONTAPY_DB=/tmp/demo.db python3 main.py
 ```
 
-The first launch seeds a demo dataset. Data lives at `~/.local/share/contapy/contapy.db` (honouring `XDG_DATA_HOME`). Use **Preferences → Reset demo data** to return to the seeded state.
+The first launch seeds a demo dataset. Data lives at `~/.local/share/contapy/contapy.db` (honouring `XDG_DATA_HOME`) on Linux, and `%LOCALAPPDATA%\contapy\contapy.db` on Windows. Use **Preferences → Reset demo data** to return to the seeded state.
+
+### Windows
+
+The **Windows build** GitHub Actions workflow publishes a ready-to-run
+`LetoBank-windows.zip` artifact, and attaches it to tagged releases. Unzip it
+and launch `LetoBank.exe`; no Python install is needed.
+
+To run from source instead:
+
+```bat
+py -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+run.bat
+```
+
+or run `python main.py` directly. To build the executable locally:
+
+```bat
+build_windows.bat
+```
+
+The bundle is written to `dist\LetoBank\LetoBank.exe`.
 
 ### Switching databases
 
 **File → Open Database…** (`Ctrl+O`) opens another SQLite database without
 restarting. LetoBank remembers the choice in `~/.config/contapy/config.json`
-(honouring `XDG_CONFIG_HOME`) and reopens that database on the next launch. The
+(honouring `XDG_CONFIG_HOME`, or `%APPDATA%\contapy\config.json` on Windows)
+and reopens that database on the next launch. The
 window title shows the database filename so it is always clear which file is
 active.
 
@@ -738,5 +761,5 @@ Three hundred and fifty-three tests cover the reference balances, the rolling do
 - HomeBank's Budget/Statistics report windows are not implemented yet.
 - Internal transfers are stored as two linked legs; CSV export writes those legs separately, and re-importing does not relink them.
 - The UI is English while the seeded demo data is Spanish, mirroring the reference.
-- Written and tested on Linux/Wayland with Python 3.14, PySide6 6.12 and Qt 6.12; it should run anywhere PySide6 does.
+- Written and tested on Linux/Wayland with Python 3.14, PySide6 6.12 and Qt 6.12; a PyInstaller bundle is built for Windows by GitHub Actions and should run on any recent Windows 10/11.
 - HomeBank's own file format (`.xhb`) and QIF/OFX/QFX imports are not supported yet; data lives in SQLite.
